@@ -30,7 +30,7 @@ header:after{content:'';position:absolute;inset:0;background:linear-gradient(120
 .hero-league{width:160px;height:78px;object-fit:cover;object-position:center;background:#ed1c24;border:2px solid rgba(255,255,255,.65);border-radius:6px}
 .hero-copy{text-align:left}.eyebrow{color:var(--league-yellow);font-size:13px;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px}
 h1{margin:0;font-size:clamp(25px,3vw,38px);line-height:1.05}.subtitle{margin-top:6px;color:#ddd;font-size:14px}
-#status{margin-top:9px;font-size:13px;color:#bbb}
+#status{margin-top:9px;font-size:13px;color:#bbb}#run-status{margin-top:5px;font-size:12px;font-weight:800;color:#78d38f}#run-status .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#78d38f;margin-right:6px;box-shadow:0 0 0 3px rgba(120,211,143,.12)}
 .logo-fallback{display:none;font-weight:900;color:var(--league-yellow);text-align:center}
 
 .toolbar{padding:12px 16px;background:#fff;display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:20;box-shadow:0 1px 5px #aaa}
@@ -107,7 +107,7 @@ select{min-width:180px}
 <header>
 <div class="hero">
   <div><img class="hero-logo" src="https://ilcalcio.net/assets/74/79/74798e74ec395fe9614ced7aa31c4dc3.png" alt="Tiverton Town FC crest" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="logo-fallback">TIVERTON<br>TOWN FC</div></div>
-  <div class="hero-copy"><div class="eyebrow">Tiverton Town • 2026/27</div><h1>Division One South Results Centre</h1><div class="subtitle">Fixtures matrix, results and live league table</div><div id="status">Waiting for results data…</div></div>
+  <div class="hero-copy"><div class="eyebrow">Tiverton Town • 2026/27</div><h1>Division One South Results Centre</h1><div class="subtitle">Fixtures matrix, results and live league table</div><div id="status">Waiting for results data…</div><div id="run-status"><span class="dot"></span>Page running normally</div></div>
   <div><img class="hero-league" src="https://www.voicenewspapers.co.uk/tindle-static/image/2024/08/30/12/41/Untitled-design-119.jpeg?crop=752%3A500&amp;height=500&amp;width=752" alt="Pitching In Southern League" onerror="this.style.display='none'"></div>
 </div>
 </header>

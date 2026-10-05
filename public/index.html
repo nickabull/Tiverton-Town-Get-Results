@@ -36,9 +36,21 @@ h1{margin:0;font-size:clamp(25px,3vw,38px);line-height:1.05}.subtitle{margin-top
 .toolbar{padding:12px 16px;background:#fff;display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:20;box-shadow:0 1px 5px #aaa}
 button,.filebtn{padding:9px 14px;border:1px solid #333;background:var(--league-yellow);font-weight:bold;cursor:pointer;font:inherit;color:#111;text-decoration:none;display:inline-block}
 button.secondary,.filebtn.secondary{background:white}
-input{padding:9px;width:min(260px,100%);border:1px solid #aaa}
+input,select{padding:9px;border:1px solid #aaa;background:#fff;font:inherit}
+select{min-width:180px}
+.filter-label{font-size:12px;font-weight:700;color:#555;margin-right:-4px}
 .wrap{width:100%;overflow-x:auto;overflow-y:visible;padding:14px 12px 18px;-webkit-overflow-scrolling:touch}
-#matrix{width:max-content;min-width:0;margin:0 auto}
+.matrix-area{display:flex;align-items:flex-start;gap:16px;width:max-content;min-width:100%;justify-content:center}
+#matrix{width:max-content;min-width:0}
+#team-key{width:245px;flex:0 0 245px;background:#fff;border:1px solid #bbb}
+#team-key h3{margin:0;padding:10px 12px;background:#111;color:#fff;border-bottom:4px solid var(--league-yellow);font-size:15px}
+.key-row{height:42px;display:grid;grid-template-columns:36px 42px 1fr;align-items:center;border-bottom:1px solid #ddd;padding:0 8px;gap:7px}
+.key-row:last-child{border-bottom:0}
+.key-logo{width:28px;height:28px;object-fit:contain}
+.key-code{font-weight:800}
+.key-name{font-size:12px;line-height:1.15}
+.key-fallback{width:28px;height:28px;border-radius:50%;background:#222;color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800}
+
 #matrix table{table-layout:fixed;width:max-content;margin:0;border-collapse:collapse;background:white}
 #matrix th,#matrix td{border:1px solid var(--grid);text-align:center;width:64px;min-width:64px;height:42px;padding:0 5px;white-space:nowrap}
 #matrix th{background:var(--league-yellow);font-weight:800;position:sticky;top:0;z-index:5}
@@ -74,9 +86,14 @@ input{padding:9px;width:min(260px,100%);border:1px solid #aaa}
   header{padding:12px 10px}.hero{grid-template-columns:70px 1fr;gap:12px}.hero-logo{height:64px}.hero-league{display:none}.hero-copy{text-align:left}.eyebrow{font-size:10px;letter-spacing:1.3px}.subtitle{font-size:12px}
 
   .toolbar{padding:10px}
+  .toolbar select{min-width:150px;max-width:46vw}
   .wrap{padding:10px 6px 16px}
+  .matrix-area{justify-content:flex-start}
   #matrix th,#matrix td{width:56px;min-width:56px;height:38px;font-size:13px}
   #matrix .score{font-size:14px}
+  #team-key{width:220px;flex-basis:220px}
+  .key-row{height:38px;grid-template-columns:32px 38px 1fr;padding:0 6px}
+  .key-logo,.key-fallback{width:25px;height:25px}
 }
 @media print{
   .toolbar,#games{display:none}
@@ -99,26 +116,65 @@ input{padding:9px;width:min(260px,100%);border:1px solid #aaa}
 <button class="secondary" onclick="downloadCSV()">Download CSV</button>
 <a class="filebtn secondary" href="SFL_Division_One_South_Matrix.xlsx">Open coloured Excel matrix</a>
 <button class="secondary" onclick="downloadHTML()">Download HTML report</button>
-<input id="filter" placeholder="Filter team..." oninput="render()">
+<span class="filter-label">Team 1</span><select id="team1" onchange="render()"></select>
+<span class="filter-label">Team 2</span><select id="team2" onchange="render()"></select>
 </div>
-<div class="wrap"><div id="matrix"></div></div>
+<div class="wrap"><div class="matrix-area"><div id="matrix"></div><div id="team-key"></div></div></div>
 <div id="league"></div>
 <div id="games"></div>
 <script src="data.js"></script>
 <script>
 let data=window.SFL_DATA||{teams:[],results:[],leagueTable:[],updated:"",codes:{}};
 const TIVERTON='Tiverton Town';
+const TEAM_SITES={
+ 'Barnstaple Town':'barnstapletownfc.co.uk',
+ 'Bideford':'bidefordafc.com',
+ 'Bishops Cleeve':'bishopscleevefc.co.uk',
+ 'Bristol Manor Farm':'bristolmanorfarm.com',
+ 'Dorchester Town':'dorchestertownfc.co.uk',
+ 'Exmouth Town':'exmouth-townfc.co.uk',
+ 'Falmouth Town':'falmouthtownafc.co.uk',
+ 'Hartpury':'hartpury.ac.uk',
+ 'Hungerford Town':'hungerfordtown.com',
+ 'Larkhall Athletic':'larkhallathletic.com',
+ 'Melksham Town':'melkshamtownfc.net',
+ 'Paulton Rovers':'paultonrovers.co.uk',
+ 'Portland United':'portlandunitedfc.uk',
+ 'Shaftesbury':'shaftesburyfc.co.uk',
+ 'Slimbridge':'slimbridgeafc.co.uk',
+ 'Sporting Club Inkberrow':'inkberrowfootballclub.co.uk',
+ 'Swindon Supermarine':'swindonsupermarinefc.com',
+ 'Tiverton Town':'tivertontownfc.co.uk',
+ 'Westbury United':'westburyunited.co.uk',
+ 'Weymouth':'theterras.com',
+ 'Willand Rovers':'willandrovers.co.uk',
+ 'Worcester Raiders':'worcesterraidersfc.com'
+};
+function badgeUrl(team){
+ if(team===TIVERTON) return 'https://ilcalcio.net/assets/74/79/74798e74ec395fe9614ced7aa31c4dc3.png';
+ const domain=TEAM_SITES[team]||'';
+ return domain ? 'https://www.google.com/s2/favicons?domain='+encodeURIComponent(domain)+'&sz=64' : '';
+}
+function populateFilters(){
+ const opts='<option value="">All teams</option>'+data.teams.map(t=>'<option value="'+esc(t)+'">'+esc(data.codes[t])+' — '+esc(t)+'</option>').join('');
+ document.getElementById('team1').innerHTML=opts;
+ document.getElementById('team2').innerHTML=opts;
+}
 function load(){
  if(!window.SFL_DATA || !data.teams.length){
    document.getElementById('status').textContent='No results data is available yet. The online updater will try again automatically.';
    return;
  }
+ populateFilters();
  render();
 }
 function render(){
- const f=document.getElementById('filter').value.trim().toLowerCase();
- let teams=data.teams.filter(t=>!f||t.toLowerCase().includes(f)||(data.codes[t]||'').toLowerCase().includes(f));
+ const t1=document.getElementById('team1').value;
+ const t2=document.getElementById('team2').value;
+ let teams=(t1&&t2&&t1!==t2)?[t1,t2]:data.teams;
  let res=data.results;
+ if(t1&&t2&&t1!==t2) res=res.filter(x=>(x.home===t1&&x.away===t2)||(x.home===t2&&x.away===t1));
+ else if(t1||t2){ const t=t1||t2; res=res.filter(x=>x.home===t||x.away===t); }
  let lookup={};
  res.forEach(x=>lookup[x.home+'|'+x.away]=x.score);
  let h='<table><tr><th class="axis-corner" title="Away / Home">A/H</th>'+teams.map(home=>'<th class="'+(home===TIVERTON?'tiv-axis':'')+'" title="Home: '+esc(home)+'">'+esc(data.codes[home])+'</th>').join('')+'</tr>';
@@ -132,6 +188,13 @@ function render(){
  });
  h+='</table>';
  document.getElementById('matrix').innerHTML=h;
+ const keyRows=data.teams.map(team=>{
+   const src=badgeUrl(team);
+   const initials=(data.codes[team]||team.slice(0,3)).slice(0,3);
+   const logo=src?'<img class="key-logo" src="'+esc(src)+'" alt="'+esc(team)+' badge" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><span class="key-fallback" style="display:none">'+esc(initials)+'</span>':'<span class="key-fallback">'+esc(initials)+'</span>';
+   return '<div class="key-row">'+logo+'<span class="key-code">'+esc(data.codes[team])+'</span><span class="key-name">'+esc(team)+'</span></div>';
+ }).join('');
+ document.getElementById('team-key').innerHTML='<h3>Team code key</h3>'+keyRows;
  document.getElementById('status').textContent='Last updated: '+(data.updated||'unknown')+' · '+data.results.length+' completed games';
  let rows=res.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'') || a.home.localeCompare(b.home) || a.away.localeCompare(b.away));
  document.getElementById('games').innerHTML='<h2>Extracted results</h2><table><tr><th>Date</th><th>Home</th><th>Score</th><th>Away</th></tr>'+ rows.map(x=>'<tr><td>'+esc(formatDate(x.date))+'</td><td>'+esc(x.home)+'</td><td><b>'+esc(x.score)+'</b></td><td>'+esc(x.away)+'</td></tr>').join('')+'</table>';
@@ -180,7 +243,7 @@ function downloadCSV(){
  download('SFL_Division_One_South_Matrix.csv',rows.map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\r\n'),'text/csv');
 }
 function downloadHTML(){
- download('SFL_Division_One_South_Results.html','<!doctype html><html><body>'+document.querySelector('header').outerHTML+document.getElementById('matrix').outerHTML+document.getElementById('games').outerHTML+document.getElementById('league').outerHTML+'</body></html>','text/html');
+ download('SFL_Division_One_South_Results.html','<!doctype html><html><body>'+document.querySelector('header').outerHTML+document.getElementById('matrix').outerHTML+document.getElementById('team-key').outerHTML+document.getElementById('league').outerHTML+document.getElementById('games').outerHTML+'</body></html>','text/html');
 }
 load();
 </script>

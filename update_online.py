@@ -162,12 +162,31 @@ def parse_league_table(page: str) -> list[dict]:
     table = heading.find_next("table") if heading else None
     if table is None:
         return []
+    header_cells = table.find("tr").find_all(["td", "th"])
+    headers = [clean_text(c.get_text()).lower() for c in header_cells]
+    required = {"pos", "team", "p", "gd", "pts"}
+    if not required.issubset(headers):
+        raise RuntimeError("League table headers changed; refusing to guess columns")
+    columns = {name: headers.index(name) for name in required}
     out = []
-    for tr in table.find_all("tr"):
+    for tr in table.find_all("tr")[1:]:
         cells = [clean_text(c.get_text(" ", strip=True)) for c in tr.find_all(["td", "th"])]
-        if len(cells) < 5 or not cells[0].isdigit() or not cells[2].isdigit() or not re.fullmatch(r"[+-]?\d+", cells[3]) or not cells[4].isdigit():
+        if len(cells) <= max(columns.values()):
             continue
-        out.append({"pos":int(cells[0]), "team":cells[1], "p":int(cells[2]), "gd":int(cells[3]), "pts":int(cells[4])})
+        try:
+            row = {key: int(cells[columns[key]]) for key in ("pos", "p", "gd", "pts")}
+        except ValueError:
+            continue
+        row["team"] = cells[columns["team"]]
+        if row["p"] < 0 or not 0 <= row["pts"] <= 3 * row["p"]:
+            raise RuntimeError("Invalid league table points")
+        if all(key in headers for key in ("w", "d", "l", "f", "a")):
+            wins, draws, losses, gf, ga = [int(cells[headers.index(key)]) for key in ("w", "d", "l", "f", "a")]
+            if wins + draws + losses != row["p"] or gf - ga != row["gd"] or wins * 3 + draws != row["pts"]:
+                raise RuntimeError("League table arithmetic did not reconcile")
+        out.append(row)
+    if len(out) != len(CODES) or {r["pos"] for r in out} != set(range(1, len(CODES) + 1)):
+        raise RuntimeError("League table is incomplete")
     return sorted(out, key=lambda x: x["pos"])
 
 

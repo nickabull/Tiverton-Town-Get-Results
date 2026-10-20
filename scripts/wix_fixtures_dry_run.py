@@ -1,21 +1,10 @@
 #!/usr/bin/env python3
-"""Read-only reconciliation of completed Southern League results against a Wix CMS CSV export.
-
-Usage:
-  python scripts/wix_fixtures_dry_run.py --wix-csv fixtures-export.csv --results-json public/data.json
-
-Never writes to Wix. Produces a JSON report on stdout.
-"""
+"""Read-only comparison of Wix CMS export with Get Results JSON. No Wix writes."""
 import argparse
 import csv
 import json
 import re
-from pathlib import Path
-
-
-def norm(value):
-    return re.sub(r"[^a-z0-9]", "", str(value or "").casefold())
-
+from collections import Counter, defaultdict
 
 ALIASES = {
     "dorchester": "dorchestertown",
@@ -28,78 +17,94 @@ ALIASES = {
     "hungerford": "hungerfordtown",
 }
 
-
-def team_key(name):
-    key = norm(name)
+def canon(value):
+    key = re.sub(r"[^a-z0-9]", "", str(value or "").casefold())
     return ALIASES.get(key, key)
 
+def is_league(value):
+    return canon(value) in {"sld1s", "southernleaguedivisiononesouth", "southernleagued1south"}
 
-def cms_date(row):
-    raw = row.get("Date") or row.get("date") or ""
-    return raw[:10]
+def result_view(side, score):
+    match = re.fullmatch(r"\s*(\d+)\s*[-–:]\s*(\d+)\s*", str(score or ""))
+    if not match:
+        return None
+    home, away = map(int, match.groups())
+    ours, theirs = (home, away) if side == "H" else (away, home)
+    outcome = "W" if ours > theirs else ("D" if ours == theirs else "L")
+    return f"{outcome} {ours}-{theirs}"
 
+def compare(wix_rows, source):
+    identifiers = Counter(row.get("ID", "") for row in wix_rows)
+    keys = defaultdict(list)
+    for row in wix_rows:
+        if is_league(row.get("Competition")):
+            keys[(str(row.get("Date", ""))[:10],
+                  canon(row.get("Opposition")),
+                  str(row.get("HomeAway", "")).strip().upper())].append(row)
 
-def cms_homeaway(row):
-    return (row.get("HomeAway") or row.get("homeAway") or "").strip().upper()[:1]
+    changes, unchanged, unmatched, undated = [], [], [], []
+    for item in source.get("results", []):
+        if canon(item.get("home")) == "tivertontown":
+            side, opposition = "H", item.get("away")
+        elif canon(item.get("away")) == "tivertontown":
+            side, opposition = "A", item.get("home")
+        else:
+            continue
 
+        when = str(item.get("date") or "")[:10]
+        if not when:
+            undated.append({"opposition": opposition, "score": item.get("score")})
+            continue
+
+        matches = keys.get((when, canon(opposition), side), [])
+        if len(matches) != 1:
+            unmatched.append({
+                "date": when, "opposition": opposition, "homeAway": side,
+                "reason": "missing" if not matches else "ambiguous"
+            })
+            continue
+
+        record = matches[0]
+        actual = (record.get("Result") or "").strip()
+        expected = result_view(side, item.get("score"))
+        if expected is None:
+            unmatched.append({"date": when, "opposition": opposition, "reason": "invalid score"})
+        elif actual.casefold() == expected.casefold():
+            unchanged.append({"wixId": record.get("ID"), "date": when})
+        else:
+            changes.append({
+                "wixId": record.get("ID"), "date": when, "opposition": opposition,
+                "homeAway": side, "current": actual,
+                "suggested": expected, "action": "REVIEW_ONLY"
+            })
+
+    return {
+        "mode": "DRY_RUN_NO_WRITES",
+        "wixRows": len(wix_rows),
+        "leagueRows": sum(is_league(r.get("Competition")) for r in wix_rows),
+        "duplicateIds": [i for i, n in identifiers.items() if not i or n > 1],
+        "duplicateLeagueKeys": [list(k) for k, v in keys.items() if len(v) > 1],
+        "unchanged": unchanged, "proposedChanges": changes,
+        "unmatchedResults": unmatched, "undatedSourceResults": undated,
+        "warning": "No suggested changes may be written without verification."
+    }
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--wix-csv", required=True, type=Path)
-    parser.add_argument("--results-json", type=Path, default=Path("public/data.json"))
+    parser.add_argument("--wix-csv", required=True)
+    parser.add_argument("--results-json", required=True)
+    parser.add_argument("--output")
     args = parser.parse_args()
-    with args.results_json.open(encoding="utf-8") as handle:
-        source = json.load(handle)
-    with args.wix_csv.open(encoding="utf-8-sig", newline="") as handle:
-        cms_rows = list(csv.DictReader(handle))
-
-    # Only compare Southern League matches; cup ties can share an opponent and date.
-    league = [r for r in cms_rows if norm(r.get("Competition", "")) in
-              {"sld1s", "southernleaguedivisiononesouth"}]
-    by_key = {}
-    for row in league:
-        key = (cms_date(row), team_key(row.get("Opposition")), cms_homeaway(row))
-        by_key.setdefault(key, []).append(row)
-    suggestions = []
-    unmatched = []
-    no_dates = []
-    for result in source.get("results", []):
-        if team_key(result.get("home")) == "tivertontown":
-            side, opp = "H", result.get("away")
-        elif team_key(result.get("away")) == "tivertontown":
-            side, opp = "A", result.get("home")
-        else:
-            continue
-        date = result.get("date")
-        if not date:
-            no_dates.append({"opposition": opp, "side": side, "score": result.get("score")})
-            continue
-        key = (date, team_key(opp), side)
-        candidates = by_key.get(key, [])
-        if len(candidates) != 1:
-            unmatched.append({"date": date, "opposition": opp, "side": side,
-                              "reason": "missing" if not candidates else "ambiguous"})
-            continue
-        row = candidates[0]
-        official = result.get("score", "")
-        existing = row.get("Result", "")
-        # Scores are home-away; preserve CMS notation and never infer scorers.
-        if official and norm(official) not in norm(existing):
-            suggestions.append({
-                "date": date, "opposition": opp, "side": side,
-                "cmsResult": existing, "officialHomeAwayScore": official,
-                "action": "REVIEW_ONLY",
-                "note": "Check the result and W/D/L before any CMS update; scorers are untouched.",
-            })
-    print(json.dumps({
-        "mode": "DRY_RUN_NO_WRITES",
-        "cmsRows": len(cms_rows), "cmsLeagueRows": len(league),
-        "officialResults": len(source.get("results", [])),
-        "review": suggestions, "unmatched": unmatched,
-        "missingOfficialDates": no_dates,
-        "warning": "A match appearing unmatched is NOT permission to create or overwrite an item.",
-    }, indent=2))
-
+    with open(args.wix_csv, newline="", encoding="utf-8-sig") as file:
+        wix_rows = list(csv.DictReader(file))
+    with open(args.results_json, encoding="utf-8") as file:
+        source = json.load(file)
+    report = json.dumps(compare(wix_rows, source), indent=2)
+    if args.output:
+        with open(args.output, "w", encoding="utf-8") as file:
+            file.write(report + "\n")
+    else:
+        print(report)
 
 if __name__ == "__main__":
     main()

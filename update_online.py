@@ -184,6 +184,7 @@ def parse_league_table(page: str) -> list[dict]:
             wins, draws, losses, gf, ga = [int(cells[headers.index(key)]) for key in ("w", "d", "l", "f", "a")]
             if wins + draws + losses != row["p"] or gf - ga != row["gd"] or wins * 3 + draws != row["pts"]:
                 raise RuntimeError("League table arithmetic did not reconcile")
+            row.update(w=wins, d=draws, l=losses, gf=gf, ga=ga)
         out.append(row)
     if len(out) != len(CODES) or {r["pos"] for r in out} != set(range(1, len(CODES) + 1)):
         raise RuntimeError("League table is incomplete")
@@ -198,6 +199,20 @@ def load_previous() -> dict:
         return json.loads(p.read_text(encoding="utf-8-sig"))
     except Exception:
         return {}
+
+
+def apply_verified_results(results: list[dict]) -> list[dict]:
+    """Retain confirmed finals while secondary sources catch up after a match."""
+    seed = json.loads((ROOT / "verified-results.json").read_text(encoding="utf-8"))
+    lookup = {(r["home"], r["away"]): dict(r) for r in results}
+    for fixture in seed["results"]:
+        if fixture["home"] not in NAMES.values() or fixture["away"] not in NAMES.values():
+            raise ValueError("Unrecognised team in verified results")
+        if fixture["home"] == fixture["away"] or not SCORE_RE.fullmatch(fixture["score"]):
+            raise ValueError("Invalid verified result")
+        datetime.strptime(fixture["date"], "%Y-%m-%d")
+        lookup[(fixture["home"], fixture["away"])] = {k: fixture[k] for k in ("date", "home", "away", "score")}
+    return list(lookup.values())
 
 
 def build_csv(results: list[dict], league: list[dict]) -> None:
@@ -330,6 +345,7 @@ def main() -> int:
     if not league:
         league = prev.get("leagueTable", [])
 
+    results = apply_verified_results(results)
     results.sort(key=lambda x: (x.get("date") or "0000-00-00", x.get("home", ""), x.get("away", "")), reverse=True)
     results = sorted(results, key=lambda x: x.get("away", ""))
     results = sorted(results, key=lambda x: x.get("home", ""))

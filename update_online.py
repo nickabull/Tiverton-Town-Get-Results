@@ -21,6 +21,7 @@ from bs4 import BeautifulSoup
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
+from league_reconcile import advance_table
 
 ROOT = Path(__file__).resolve().parent
 PUBLIC = ROOT / "public"
@@ -346,6 +347,9 @@ def main() -> int:
         league = prev.get("leagueTable", [])
 
     results = apply_verified_results(results)
+    league, advanced_dates = advance_table(league, results, ALIASES)
+    if advanced_dates:
+        print('Standings reconciled with completed results: ' + ', '.join(advanced_dates))
     results.sort(key=lambda x: (x.get("date") or "0000-00-00", x.get("home", ""), x.get("away", "")), reverse=True)
     results = sorted(results, key=lambda x: x.get("away", ""))
     results = sorted(results, key=lambda x: x.get("home", ""))
@@ -359,6 +363,7 @@ def main() -> int:
         "updated":datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
         "source":SOURCE_URL,
         "leagueSource":LEAGUE_SOURCE_URL,
+        "leagueReconciledResultDates":advanced_dates,
     }
     raw = json.dumps(data, ensure_ascii=False, separators=(",",":"))
     (PUBLIC/"data.json").write_text(raw, encoding="utf-8")

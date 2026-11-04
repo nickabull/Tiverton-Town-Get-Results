@@ -1,0 +1,48 @@
+name: FWP League Data Intake - STAGING ONLY
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Saturday, Tuesday, Wednesday evening checks (UTC; covers BST/GMT windows)
+    - cron: '20 17,19,21 * * 2,3,6'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fwp-league-staging
+  cancel-in-progress: false
+
+jobs:
+  intake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Confirm FWP API secret is available
+        env:
+          FWP_API_KEY: ${{ secrets.FWP_API_KEY }}
+        shell: bash
+        run: |
+          if [ -z "$FWP_API_KEY" ]; then
+            echo "::warning::FWP_API_KEY repository secret not set. Intake is disabled until configured."
+            echo "INTAKE_READY=no" >> "$GITHUB_ENV"
+          else
+            echo "INTAKE_READY=yes" >> "$GITHUB_ENV"
+          fi
+      - name: Fetch and validate league data
+        if: env.INTAKE_READY == 'yes'
+        env:
+          FWP_API_KEY: ${{ secrets.FWP_API_KEY }}
+        run: python scripts/fwp_league_intake.py
+      - name: Preserve read-only staging snapshot and validation report
+        if: always() && env.INTAKE_READY == 'yes'
+        uses: actions/upload-artifact@v4
+        with:
+          name: fwp-league-staging-${{ github.run_id }}-${{ github.run_attempt }}
+          path: staging/fwp/
+          retention-days: 30
+          if-no-files-found: warn

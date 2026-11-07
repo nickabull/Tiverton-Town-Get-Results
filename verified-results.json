@@ -1,11 +1,12 @@
 {
-  "checkedAt": "2026-10-27 22:28:29 UTC",
+  "checkedAt": "2026-11-07",
   "source": "Southern League final scores, confirmed in Nick’s 27 October screenshots",
   "sourceUrls": [
     "https://www.southern-football-league.co.uk/results",
-    "https://www.southern-football-league.co.uk/match/6a5a1bf6ce9ef452b61f442d"
+    "https://www.southern-football-league.co.uk/match/6a5a1bf6ce9ef452b61f442d",
+    "https://www.southern-football-league.co.uk/live"
   ],
-  "note": "Home goals first. Melksham v Hartpury was postponed and is not a completed result. No result is inferred for other fixtures.",
+  "note": "Verified full-time results for 7 November 2026 provided by club matchday screenshots; preserve results pending automated sources.",
   "results": [
     {
       "date": "2026-10-27",
@@ -48,6 +49,66 @@
       "home": "Westbury",
       "away": "Willand Rovers",
       "score": "4-0"
+    },
+    {
+      "date": "2026-11-07",
+      "home": "Bideford",
+      "away": "Larkhall Athletic",
+      "score": "0-0"
+    },
+    {
+      "date": "2026-11-07",
+      "home": "Bristol Manor Farm",
+      "away": "Willand Rovers",
+      "score": "0-2"
+    },
+    {
+      "date": "2026-11-07",
+      "home": "Exmouth Town",
+      "away": "Paulton Rovers",
+      "score": "2-0"
+    },
+    {
+      "date": "2026-11-07",
+      "home": "Hungerford",
+      "away": "Worcester Raiders",
+      "score": "2-0"
+    },
+    {
+      "date": "2026-11-07",
+      "home": "Melksham Town",
+      "away": "Falmouth Town",
+      "score": "2-1"
+    },
+    {
+      "date": "2026-11-07",
+      "home": "Portland Utd",
+      "away": "Hartpury",
+      "score": "2-0"
+    },
+    {
+      "date": "2026-11-07",
+      "home": "Shaftesbury",
+      "away": "Barnstaple Town",
+      "score": "1-1"
+    },
+    {
+      "date": "2026-11-07",
+      "home": "Slimbridge AFC",
+      "away": "Weymouth FC",
+      "score": "0-5"
+    },
+    {
+      "date": "2026-11-07",
+      "home": "Tiverton Town",
+      "away": "Sporting Club Inkberrow",
+      "score": "1-2"
+    },
+    {
+      "date": "2026-11-07",
+      "home": "Westbury",
+      "away": "Dorchester",
+      "score": "2-1"
     }
   ]
 }

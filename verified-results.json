@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-11-07",
-  "source": "Southern League final scores, confirmed in Nick’s 27 October screenshots",
+  "checkedAt": "2026-11-12",
+  "source": "Southern League match-results screenshots supplied for 9–11 November 2026; previous verified league results retained",
   "sourceUrls": [
     "https://www.southern-football-league.co.uk/results",
     "https://www.southern-football-league.co.uk/match/6a5a1bf6ce9ef452b61f442d",
     "https://www.southern-football-league.co.uk/live"
   ],
-  "note": "Verified full-time results for 7 November 2026 provided by club matchday screenshots; preserve results pending automated sources.",
+  "note": "Verified completed league results only, including 11 Nov Paulton 0–1 Tiverton. Willand Rovers v Shaftesbury on 11 Nov was P–P and must never be counted as played.",
   "results": [
     {
       "date": "2026-10-27",
@@ -109,6 +109,48 @@
       "home": "Westbury",
       "away": "Dorchester",
       "score": "2-1"
+    },
+    {
+      "date": "2026-11-09",
+      "home": "Swindon SM",
+      "away": "Westbury",
+      "score": "0-4"
+    },
+    {
+      "date": "2026-11-10",
+      "home": "Barnstaple Town",
+      "away": "Bristol Manor Farm",
+      "score": "2-1"
+    },
+    {
+      "date": "2026-11-10",
+      "home": "Hartpury",
+      "away": "Bishops Cleeve",
+      "score": "5-1"
+    },
+    {
+      "date": "2026-11-10",
+      "home": "Sporting Club Inkberrow",
+      "away": "Hungerford",
+      "score": "2-2"
+    },
+    {
+      "date": "2026-11-10",
+      "home": "Worcester Raiders",
+      "away": "Melksham Town",
+      "score": "1-5"
+    },
+    {
+      "date": "2026-11-11",
+      "home": "Larkhall Athletic",
+      "away": "Slimbridge AFC",
+      "score": "1-3"
+    },
+    {
+      "date": "2026-11-11",
+      "home": "Paulton Rovers",
+      "away": "Tiverton Town",
+      "score": "0-1"
     }
   ]
 }

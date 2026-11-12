@@ -350,6 +350,33 @@ def main() -> int:
     league, advanced_dates = advance_table(league, results, ALIASES)
     if advanced_dates:
         print('Standings reconciled with completed results: ' + ', '.join(advanced_dates))
+    # An editor-verified official 11 Nov snapshot is the minimum safe table
+    # while secondary archive standings lag. It must *never* override a
+    # newer completed result or a table with more fixtures played.
+    verified_standings_used = False
+    snapshot_file = ROOT / "verified-standings-2026-11-11.json"
+    if snapshot_file.exists():
+        approved = json.loads(snapshot_file.read_text(encoding="utf-8"))
+        baseline = approved["asOf"]
+        played = approved["matchesPlayed"]
+        current_total = sum(int(row["p"]) for row in league) if len(league) == 22 else 0
+        distinct_matches = {(x["home"], x["away"]) for x in results}
+        newer_result = any(x.get("date", "") > baseline for x in results)
+        if not newer_result and len(distinct_matches) <= played and current_total <= 2*played:
+            approved_rows = approved["rows"]
+            known_clubs = {re.sub(r"[^a-z0-9]", "", ALIASES.get(n, n).lower()) for n in NAMES.values()}
+            approved_clubs = {re.sub(r"[^a-z0-9]", "", ALIASES.get(x["team"], x["team"]).lower()) for x in approved_rows}
+            if len(approved_rows) != 22 or len(approved_clubs) != 22 or approved_clubs != known_clubs:
+                raise RuntimeError("Approved standings club validation failed")
+            if sum(int(x["p"]) for x in approved_rows) != 2*played:
+                raise RuntimeError("Approved standings P total does not reconcile")
+            if any(int(x["p"]) != int(x["w"])+int(x["d"])+int(x["l"]) or
+                   int(x["gf"])-int(x["ga"]) != int(x["gd"]) or
+                   int(x["pts"]) != 3*int(x["w"])+int(x["d"]) for x in approved_rows):
+                raise RuntimeError("Approved standings arithmetic validation failed")
+            league = approved_rows
+            verified_standings_used = True
+            print("Approved 11 Nov league standings applied; auto-expires with next league result")
     results.sort(key=lambda x: (x.get("date") or "0000-00-00", x.get("home", ""), x.get("away", "")), reverse=True)
     results = sorted(results, key=lambda x: x.get("away", ""))
     results = sorted(results, key=lambda x: x.get("home", ""))
@@ -362,8 +389,9 @@ def main() -> int:
         "leagueTable":league,
         "updated":datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
         "source":SOURCE_URL,
-        "leagueSource":LEAGUE_SOURCE_URL,
+        "leagueSource":("editor-verified 11 Nov 2026 official standings" if verified_standings_used else LEAGUE_SOURCE_URL),
         "leagueReconciledResultDates":advanced_dates,
+        "verifiedLeagueSnapshotAsOf":("2026-11-11" if verified_standings_used else None),
     }
     raw = json.dumps(data, ensure_ascii=False, separators=(",",":"))
     (PUBLIC/"data.json").write_text(raw, encoding="utf-8")

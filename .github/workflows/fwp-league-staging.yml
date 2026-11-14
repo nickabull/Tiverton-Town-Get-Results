@@ -3,8 +3,12 @@ name: FWP League Data Intake - STAGING ONLY
 on:
   workflow_dispatch:
   schedule:
-    # Saturday, Tuesday, Wednesday evening checks (UTC; covers BST/GMT windows)
-    - cron: '20 17,19,21 * * 2,3,6'
+    # Seven-day fixture detection: midday to late evening, including weekday
+    # rearrangements, Sunday fixtures and Bank Holiday matches.
+    # Times are UTC; UK summer fixtures remain covered.
+    - cron: '17,47 12-23 * * *'
+    # Overnight/morning catch-up for late full-time confirmations/corrections.
+    - cron: '17 0-11 * * *'
 
 permissions:
   contents: read

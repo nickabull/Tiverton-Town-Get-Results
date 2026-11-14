@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-11-12",
-  "source": "Southern League match-results screenshots supplied for 9–11 November 2026; previous verified league results retained",
+  "checkedAt": "2026-11-14",
+  "source": "Southern League final results screenshot supplied 14 November 2026",
   "sourceUrls": [
     "https://www.southern-football-league.co.uk/results",
     "https://www.southern-football-league.co.uk/match/6a5a1bf6ce9ef452b61f442d",
     "https://www.southern-football-league.co.uk/live"
   ],
-  "note": "Verified completed league results only, including 11 Nov Paulton 0–1 Tiverton. Willand Rovers v Shaftesbury on 11 Nov was P–P and must never be counted as played.",
+  "note": "14 November completed Division One South results included. Weymouth FC v Sporting Club Inkberrow postponed and excluded from results and table.",
   "results": [
     {
       "date": "2026-10-27",
@@ -151,6 +151,66 @@
       "home": "Paulton Rovers",
       "away": "Tiverton Town",
       "score": "0-1"
+    },
+    {
+      "date": "2026-11-14",
+      "home": "Barnstaple Town",
+      "away": "Westbury United",
+      "score": "1-2"
+    },
+    {
+      "date": "2026-11-14",
+      "home": "Dorchester Town",
+      "away": "Larkhall Athletic",
+      "score": "3-0"
+    },
+    {
+      "date": "2026-11-14",
+      "home": "Exmouth Town",
+      "away": "Bristol Manor Farm",
+      "score": "5-0"
+    },
+    {
+      "date": "2026-11-14",
+      "home": "Hartpury FC",
+      "away": "Falmouth Town",
+      "score": "3-0"
+    },
+    {
+      "date": "2026-11-14",
+      "home": "Hungerford Town",
+      "away": "Shaftesbury",
+      "score": "3-1"
+    },
+    {
+      "date": "2026-11-14",
+      "home": "Paulton Rovers",
+      "away": "Willand Rovers",
+      "score": "0-1"
+    },
+    {
+      "date": "2026-11-14",
+      "home": "Slimbridge AFC",
+      "away": "Melksham Town",
+      "score": "2-4"
+    },
+    {
+      "date": "2026-11-14",
+      "home": "Swindon Supermarine",
+      "away": "Portland United",
+      "score": "0-0"
+    },
+    {
+      "date": "2026-11-14",
+      "home": "Tiverton Town",
+      "away": "Bishops Cleeve",
+      "score": "3-1"
+    },
+    {
+      "date": "2026-11-14",
+      "home": "Worcester Raiders",
+      "away": "Bideford AFC",
+      "score": "0-0"
     }
   ]
 }

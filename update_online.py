@@ -40,9 +40,9 @@ NAMES = {
     "TIV":"Tiverton Town", "WES":"Westbury", "WEY":"Weymouth FC", "WIL":"Willand Rovers", "WOR":"Worcester Raiders"
 }
 ALIASES = {
-    "Barnstaple Town":"Barnstaple Town", "Bideford":"Bideford", "Bishops Cleeve":"Bishops Cleeve",
+    "Barnstaple Town":"Barnstaple Town", "Bideford":"Bideford", "Bideford AFC":"Bideford", "Bishops Cleeve":"Bishops Cleeve",
     "Bristol Manor Farm":"Bristol Manor Farm", "Dorchester":"Dorchester", "Dorchester Town":"Dorchester",
-    "Exmouth Town":"Exmouth Town", "Falmouth Town":"Falmouth Town", "Hartpury":"Hartpury",
+    "Exmouth Town":"Exmouth Town", "Falmouth Town":"Falmouth Town", "Hartpury":"Hartpury", "Hartpury FC":"Hartpury",
     "Hungerford":"Hungerford", "Hungerford Town":"Hungerford", "Larkhall Athletic":"Larkhall Athletic",
     "Melksham Town":"Melksham Town", "Paulton Rovers":"Paulton Rovers", "Portland Utd":"Portland Utd",
     "Portland United":"Portland Utd", "Shaftesbury":"Shaftesbury", "Slimbridge AFC":"Slimbridge AFC",
@@ -207,6 +207,9 @@ def apply_verified_results(results: list[dict]) -> list[dict]:
     seed = json.loads((ROOT / "verified-results.json").read_text(encoding="utf-8"))
     lookup = {(r["home"], r["away"]): dict(r) for r in results}
     for fixture in seed["results"]:
+        fixture = dict(fixture)
+        fixture["home"] = ALIASES.get(fixture["home"], fixture["home"])
+        fixture["away"] = ALIASES.get(fixture["away"], fixture["away"])
         if fixture["home"] not in NAMES.values() or fixture["away"] not in NAMES.values():
             raise ValueError("Unrecognised team in verified results")
         if fixture["home"] == fixture["away"] or not SCORE_RE.fullmatch(fixture["score"]):

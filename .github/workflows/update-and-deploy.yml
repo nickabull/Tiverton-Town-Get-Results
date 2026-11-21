@@ -6,6 +6,8 @@ on:
     branches: [main]
   schedule:
     - cron: "17 * * * *"
+    - cron: "*/15 14-22 * * 6" # Saturday afternoon/evening full-time updates
+    - cron: "*/15 18-22 * * 1-5" # Midweek evening full-time updates
 
 permissions:
   contents: read

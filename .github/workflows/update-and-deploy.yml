@@ -6,8 +6,8 @@ on:
     branches: [main]
   schedule:
     - cron: "17 * * * *"
-    - cron: "*/15 14-22 * * 6" # Saturday afternoon/evening full-time updates
-    - cron: "*/15 18-22 * * 1-5" # Midweek evening full-time updates
+    - cron: "*/5 14-23 * * 6" # 5-minute Saturday matchday publication attempts
+    - cron: "*/5 18-23 * * 1-5" # 5-minute midweek post-match publication attempts
 
 permissions:
   contents: read

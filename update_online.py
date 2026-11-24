@@ -263,9 +263,12 @@ def merge_verified_tivvy_finals(results: list[dict], fixture_data: dict, match_d
             existing_key, existing = same_clubs[0]
             if existing.get("score") != new_score:
                 raise RuntimeError(f"Official Tivvy result conflicts with existing result for {day}: {home} v {away}")
-            if existing_key[0] and existing_key[0] != day:
-                raise RuntimeError(f"Official Tivvy fixture date conflicts with existing dated result: {home} v {away}")
             if existing_key[0] != day:
+                # The independent source sometimes retains the original scheduled
+                # date after a rearrangement. For an identical final score and
+                # unique home/away pairing, prefer the verified official date.
+                print(f"Updated matching final's scheduled date: {home} v {away}, "
+                      f"{existing_key[0] or 'unknown'} -> {day}")
                 del known[existing_key]
                 known[identity] = dict(date=day, home=home, away=away, score=new_score)
         else:

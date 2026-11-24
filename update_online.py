@@ -219,6 +219,70 @@ def apply_verified_results(results: list[dict]) -> list[dict]:
     return list(lookup.values())
 
 
+
+def merge_verified_tivvy_finals(results: list[dict], fixture_data: dict, match_data: dict) -> list[dict]:
+    """Bridge independently verified Tivvy full-time results into the FWP grid.
+
+    The match-centre fixtures are written only on verified official FULL TIME;
+    require matching official match details to avoid publishing unverified text.
+    Never silently overwrite a disagreeing published score.
+    """
+    known = {(r["date"], r["home"], r["away"]): dict(r) for r in results}
+    details = match_data.get("fixtures") or []
+    count = 0
+    for item in fixture_data.get("fixtures") or []:
+        if item.get("competition") != "SLD1S" or not item.get("result"):
+            continue
+        day, venue = item.get("date"), item.get("homeAway")
+        if not day or venue not in ("H", "A"):
+            continue
+        opponent = ALIASES.get(item.get("opposition"), item.get("opposition"))
+        if opponent not in NAMES.values():
+            continue
+        full = re.fullmatch(r"[WDL]\s+(\d+)\s*[-–]\s*(\d+)", str(item["result"]).strip())
+        if not full:
+            continue
+        home_score, away_score = map(int, full.groups())
+        if max(home_score, away_score) > 30:
+            continue
+        gf, ga = (home_score, away_score) if venue == "H" else (away_score, home_score)
+        verified = [d for d in details if d.get("date") == day
+                    and d.get("venue") == venue
+                    and ALIASES.get(d.get("opponent"), d.get("opponent")) == opponent
+                    and d.get("eventSource", "").startswith("https://www.southern-football-league.co.uk/match/")]
+        if len(verified) != 1 or verified[0].get("result") != f"{gf}-{ga}":
+            continue
+        home = "Tiverton Town" if venue == "H" else opponent
+        away = opponent if venue == "H" else "Tiverton Town"
+        key = (day, home, away)
+        new_score = f"{home_score}-{away_score}"
+        old = known.get(key)
+        if old and old.get("score") != new_score:
+            raise RuntimeError(f"Official Tivvy result conflicts with existing result for {day}: {home} v {away}")
+        if not old:
+            known[key] = dict(date=day, home=home, away=away, score=new_score)
+            count += 1
+    if count:
+        print(f"Added {count} published official Tivvy full-time result(s) ahead of the secondary match grid")
+    return list(known.values())
+
+
+def add_published_tivvy_finals(results: list[dict]) -> list[dict]:
+    """Use the public Match Centre's verified record; retain existing grid if offline."""
+    root = "https://nickabull.github.io/Tiverton-Town-Get-Player-Info/"
+    try:
+        fixtures = requests.get(root + "match-centre-fixtures-2026-27.json",
+                                timeout=20, headers={"Cache-Control": "no-cache"})
+        fixtures.raise_for_status()
+        details = requests.get(root + "data.json", timeout=20,
+                               headers={"Cache-Control": "no-cache"})
+        details.raise_for_status()
+        return merge_verified_tivvy_finals(results, fixtures.json(), details.json())
+    except requests.RequestException as exc:
+        print(f"Verified Tivvy results unavailable; retaining FWP grid: {exc}", file=sys.stderr)
+        return results
+
+
 def build_csv(results: list[dict], league: list[dict]) -> None:
     score_lookup = {}
     code_by_name = {v:k for k,v in NAMES.items()}
@@ -350,6 +414,7 @@ def main() -> int:
         league = prev.get("leagueTable", [])
 
     results = apply_verified_results(results)
+    results = add_published_tivvy_finals(results)
     league, advanced_dates = advance_table(league, results, ALIASES)
     if advanced_dates:
         print('Standings reconciled with completed results: ' + ', '.join(advanced_dates))

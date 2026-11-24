@@ -254,13 +254,22 @@ def merge_verified_tivvy_finals(results: list[dict], fixture_data: dict, match_d
             continue
         home = "Tiverton Town" if venue == "H" else opponent
         away = opponent if venue == "H" else "Tiverton Town"
-        key = (day, home, away)
+        identity = (day, home, away)
         new_score = f"{home_score}-{away_score}"
-        old = known.get(key)
-        if old and old.get("score") != new_score:
-            raise RuntimeError(f"Official Tivvy result conflicts with existing result for {day}: {home} v {away}")
-        if not old:
-            known[key] = dict(date=day, home=home, away=away, score=new_score)
+        same_clubs = [(k, v) for k, v in known.items() if k[1:] == (home, away)]
+        if len(same_clubs) > 1:
+            raise RuntimeError(f"Duplicate league home/away pairing in results grid: {home} v {away}")
+        if same_clubs:
+            existing_key, existing = same_clubs[0]
+            if existing.get("score") != new_score:
+                raise RuntimeError(f"Official Tivvy result conflicts with existing result for {day}: {home} v {away}")
+            if existing_key[0] and existing_key[0] != day:
+                raise RuntimeError(f"Official Tivvy fixture date conflicts with existing dated result: {home} v {away}")
+            if existing_key[0] != day:
+                del known[existing_key]
+                known[identity] = dict(date=day, home=home, away=away, score=new_score)
+        else:
+            known[identity] = dict(date=day, home=home, away=away, score=new_score)
             count += 1
     if count:
         print(f"Added {count} published official Tivvy full-time result(s) ahead of the secondary match grid")
